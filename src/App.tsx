@@ -3,7 +3,7 @@ import { cities } from './data'
 import { haversineKm, type LngLat } from './geo'
 import { GuessMap, MysteryMap } from './MapView'
 
-type Screen = 'intro' | 'mystery' | 'guess' | 'result' | 'summary'
+type Screen = 'intro' | 'mystery' | 'result' | 'summary'
 
 type RoundResult = {
   city: string
@@ -14,6 +14,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('intro')
   const [round, setRound] = useState(0)
   const [guess, setGuess] = useState<LngLat | null>(null)
+  const [guessOpen, setGuessOpen] = useState(false)
   const [results, setResults] = useState<RoundResult[]>([])
 
   const city = cities[round]
@@ -32,6 +33,7 @@ export default function App() {
   const resetGame = () => {
     setRound(0)
     setGuess(null)
+    setGuessOpen(false)
     setResults([])
     setScreen('mystery')
   }
@@ -39,14 +41,16 @@ export default function App() {
   const handleGuess = useCallback((value: LngLat) => setGuess(value), [])
 
   const confirmGuess = () => {
-    if (!guess) return
+    if (!guess || !city) return
     const distanceKm = haversineKm(guess, city.center)
     setResults((current) => [...current, { city: city.name, distanceKm }])
+    setGuessOpen(false)
     setScreen('result')
   }
 
   const nextRound = () => {
     setGuess(null)
+    setGuessOpen(false)
     if (round >= cities.length - 1) {
       setScreen('summary')
       return
@@ -76,30 +80,55 @@ export default function App() {
       )}
 
       {screen === 'mystery' && city && (
-        <section className="panel">
+        <section className="panel panel--game">
           <div className="round-row">
             <span>Cidade {round + 1}/{cities.length}</span>
             <span>Observe a forma urbana</span>
           </div>
           <h1 className="screen-title">Que cidade é essa?</h1>
-          <MysteryMap city={city} />
-          <button className="button button--primary" onClick={() => setScreen('guess')}>Fazer palpite</button>
-        </section>
-      )}
 
-      {screen === 'guess' && city && (
-        <section className="panel">
-          <div className="round-row">
-            <span>Cidade {round + 1}/{cities.length}</span>
-            <span>Toque no mapa</span>
+          <div className="game-stage">
+            <MysteryMap city={city} />
+
+            {!guessOpen && (
+              <button
+                className="guess-launcher"
+                onClick={() => setGuessOpen(true)}
+                aria-label="Abrir mapa para fazer palpite"
+              >
+                <span className="guess-launcher__icon">⌖</span>
+                <span>Fazer palpite</span>
+              </button>
+            )}
+
+            {guessOpen && (
+              <div className="guess-overlay" role="dialog" aria-label="Mapa para fazer o palpite">
+                <div className="guess-overlay__header">
+                  <div>
+                    <strong>Onde ela fica?</strong>
+                    <span>Toque no mapa para marcar</span>
+                  </div>
+                  <button
+                    className="guess-overlay__close"
+                    onClick={() => setGuessOpen(false)}
+                    aria-label="Fechar mapa de palpite"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <GuessMap value={guess} onChange={handleGuess} />
+
+                <button
+                  className="button button--primary guess-overlay__confirm"
+                  disabled={!guess}
+                  onClick={confirmGuess}
+                >
+                  Confirmar palpite
+                </button>
+              </div>
+            )}
           </div>
-          <h1 className="screen-title">Onde ela fica?</h1>
-          <p className="instruction">Marque um ponto no estado de São Paulo. Você pode tocar novamente para ajustar.</p>
-          <GuessMap value={guess} onChange={handleGuess} />
-          <button className="button button--primary" disabled={!guess} onClick={confirmGuess}>
-            Confirmar palpite
-          </button>
-          <button className="button button--ghost" onClick={() => setScreen('mystery')}>Ver a cidade novamente</button>
         </section>
       )}
 
