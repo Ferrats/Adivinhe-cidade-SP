@@ -35,7 +35,6 @@ export function MysteryMap({ city }: MysteryMapProps) {
       center: city.center,
       zoom: city.zoom,
       interactive: false,
-      attributionControl: true,
       fadeDuration: 0,
       pitchWithRotate: false,
     })
@@ -67,7 +66,6 @@ export function GuessMap({ value, onChange }: GuessMapProps) {
       fitBoundsOptions: { padding: 20 },
       minZoom: 5.4,
       maxZoom: 9,
-      attributionControl: true,
       dragRotate: false,
       pitchWithRotate: false,
     })
