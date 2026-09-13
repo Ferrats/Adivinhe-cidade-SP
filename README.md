@@ -1,6 +1,6 @@
 # Adivinhe a Cidade — SP
 
-Alpha 0.01 de um jogo geográfico mobile-first: observe a malha urbana sem nomes e tente marcar onde a cidade fica no estado de São Paulo.
+Alpha 0.01.1 de um jogo geográfico mobile-first: observe a malha urbana sem nomes e tente marcar onde a cidade fica no estado de São Paulo.
 
 ## Alpha 0.01
 
@@ -8,6 +8,9 @@ Alpha 0.01 de um jogo geográfico mobile-first: observe a malha urbana sem nomes
 - mapa misterioso sem labels
 - palpite por toque no mapa de SP
 - cálculo de distância em quilômetros
+- comparação visual entre o palpite e a cidade correta
+- contorno do estado e navegação limitada à região de jogo
+- feedback de carregamento e falha dos mapas
 - resumo com erro médio e melhor palpite
 - sem conta, banco de dados ou backend
 
@@ -22,21 +25,23 @@ Alpha 0.01 de um jogo geográfico mobile-first: observe a malha urbana sem nomes
 ## Rodar localmente
 
 ```bash
-npm install
-npm run dev
+corepack enable
+pnpm install
+pnpm dev
 ```
 
 ## Build
 
 ```bash
-npm run build
+pnpm test
+pnpm build
 ```
 
 A saída estática é gerada em `dist/`, pronta para Cloudflare Pages.
 
 ### Cloudflare Pages
 
-- Build command: `npm run build`
+- Build command: `pnpm run build`
 - Build output directory: `dist`
 
 ## Princípios técnicos

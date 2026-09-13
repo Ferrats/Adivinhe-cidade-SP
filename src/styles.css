@@ -10,6 +10,7 @@
 html, body, #root { min-height: 100%; margin: 0; }
 body { min-width: 320px; background: #f3f0e8; }
 button { font: inherit; }
+button:focus-visible { outline: 3px solid #d14b32; outline-offset: 3px; }
 
 .app-shell {
   width: min(100%, 760px);
@@ -73,7 +74,26 @@ p { color: #5d584f; line-height: 1.55; font-size: 1rem; }
 }
 .map--mystery { height: min(64dvh, 590px); }
 .map--guess { height: 40dvh; min-height: 250px; cursor: crosshair; border-left: 0; border-right: 0; }
+.map--result { height: 260px; }
+.map--loading { opacity: 0; }
 .maplibregl-ctrl-attrib { font-size: 9px !important; }
+
+.map-frame, .result-map-wrap { position: relative; }
+.map-feedback, .map-fallback {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  color: #6f6a61;
+  font-size: .82rem;
+  text-align: center;
+}
+.map-feedback {
+  position: absolute;
+  inset: 0;
+  border: 1px solid #b9b2a5;
+  background: #dedbd4;
+}
+.map-feedback--error { color: #7a2f23; }
 
 .guess-launcher {
   position: absolute;
@@ -90,6 +110,7 @@ p { color: #5d584f; line-height: 1.55; font-size: 1rem; }
   font-weight: 850;
   cursor: pointer;
   box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+  z-index: 5;
 }
 
 .guess-launcher__icon { font-size: 1.25rem; line-height: 1; }
@@ -159,9 +180,29 @@ p { color: #5d584f; line-height: 1.55; font-size: 1rem; }
 .button--ghost { background: transparent; color: #171717; }
 
 .panel--result p { margin: 6px 0; }
-.panel--result h1 { margin-bottom: 14px; }
+.panel--result h1 { margin-bottom: 20px; }
 .distance { font-size: clamp(4rem, 20vw, 8rem); font-weight: 900; letter-spacing: -.08em; line-height: .8; margin: 18px 0 10px; }
 .result-note { border-top: 1px solid #cfc9bc; padding-top: 14px; margin-top: 10px; color: #403c35; }
+
+.result-map-wrap { margin-bottom: 12px; }
+.result-map-legend {
+  position: absolute;
+  z-index: 4;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 7px 9px;
+  background: rgb(243 240 232 / 92%);
+  border: 1px solid #b9b2a5;
+  font-size: .7rem;
+  font-weight: 700;
+}
+.result-map-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.legend-dot--guess { background: #171717; }
+.legend-dot--city { background: #d14b32; }
 
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 28px 0 14px; }
 .stat-card { border: 1px solid #b9b2a5; padding: 18px; display: flex; flex-direction: column; min-height: 118px; justify-content: space-between; }
@@ -190,5 +231,6 @@ footer { padding: 16px 0 2px; border-top: 1px solid #cfc9bc; font-size: .68rem; 
   }
 
   .map--guess { height: 330px; min-height: 0; }
+  .map--result { height: 320px; }
   .guess-overlay__confirm { width: calc(100% - 24px); margin: 12px 12px 0; align-self: stretch; }
 }

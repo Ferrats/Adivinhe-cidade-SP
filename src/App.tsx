@@ -1,14 +1,13 @@
-import { useCallback, useMemo, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { cities } from './data'
 import { haversineKm, type LngLat } from './geo'
-import { GuessMap, MysteryMap } from './MapView'
+import { summarizeResults, type RoundResult } from './game'
+
+const MysteryMap = lazy(() => import('./MapView').then((module) => ({ default: module.MysteryMap })))
+const GuessMap = lazy(() => import('./MapView').then((module) => ({ default: module.GuessMap })))
+const ResultMap = lazy(() => import('./MapView').then((module) => ({ default: module.ResultMap })))
 
 type Screen = 'intro' | 'mystery' | 'result' | 'summary'
-
-type RoundResult = {
-  city: string
-  distanceKm: number
-}
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('intro')
@@ -16,19 +15,36 @@ export default function App() {
   const [guess, setGuess] = useState<LngLat | null>(null)
   const [guessOpen, setGuessOpen] = useState(false)
   const [results, setResults] = useState<RoundResult[]>([])
+  const guessLauncherRef = useRef<HTMLButtonElement>(null)
+  const guessCloseRef = useRef<HTMLButtonElement>(null)
 
   const city = cities[round]
   const latest = results.at(-1)
 
-  const averageKm = useMemo(() => {
-    if (!results.length) return 0
-    return results.reduce((sum, item) => sum + item.distanceKm, 0) / results.length
-  }, [results])
+  const { averageKm, best } = useMemo(() => summarizeResults(results), [results])
 
-  const best = useMemo(() => {
-    if (!results.length) return null
-    return [...results].sort((a, b) => a.distanceKm - b.distanceKm)[0]
-  }, [results])
+  const closeGuess = useCallback(() => {
+    setGuessOpen(false)
+    window.setTimeout(() => guessLauncherRef.current?.focus(), 0)
+  }, [])
+
+  useEffect(() => {
+    if (!guessOpen) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    guessCloseRef.current?.focus()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeGuess()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [closeGuess, guessOpen])
 
   const resetGame = () => {
     setRound(0)
@@ -43,7 +59,7 @@ export default function App() {
   const confirmGuess = () => {
     if (!guess || !city) return
     const distanceKm = haversineKm(guess, city.center)
-    setResults((current) => [...current, { city: city.name, distanceKm }])
+    setResults((current) => [...current, { city: city.name, distanceKm, guess }])
     setGuessOpen(false)
     setScreen('result')
   }
@@ -63,7 +79,7 @@ export default function App() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand">ADIVINHE A CIDADE</div>
-        <div className="alpha">SP · α 0.01</div>
+        <div className="alpha">SP · α 0.01.1</div>
       </header>
 
       {screen === 'intro' && (
@@ -88,11 +104,14 @@ export default function App() {
           <h1 className="screen-title">Que cidade é essa?</h1>
 
           <div className="game-stage">
-            <MysteryMap city={city} />
+            <Suspense fallback={<div className="map map--mystery map-fallback">Carregando mapa…</div>}>
+              <MysteryMap city={city} />
+            </Suspense>
 
             {!guessOpen && (
               <button
                 className="guess-launcher"
+                ref={guessLauncherRef}
                 onClick={() => setGuessOpen(true)}
                 aria-label="Abrir mapa para fazer palpite"
               >
@@ -102,7 +121,7 @@ export default function App() {
             )}
 
             {guessOpen && (
-              <div className="guess-overlay" role="dialog" aria-label="Mapa para fazer o palpite">
+              <div className="guess-overlay" role="dialog" aria-modal="true" aria-label="Mapa para fazer o palpite">
                 <div className="guess-overlay__header">
                   <div>
                     <strong>Onde ela fica?</strong>
@@ -110,14 +129,17 @@ export default function App() {
                   </div>
                   <button
                     className="guess-overlay__close"
-                    onClick={() => setGuessOpen(false)}
+                    ref={guessCloseRef}
+                    onClick={closeGuess}
                     aria-label="Fechar mapa de palpite"
                   >
                     ×
                   </button>
                 </div>
 
-                <GuessMap value={guess} onChange={handleGuess} />
+                <Suspense fallback={<div className="map map--guess map-fallback">Carregando mapa…</div>}>
+                  <GuessMap value={guess} onChange={handleGuess} />
+                </Suspense>
 
                 <button
                   className="button button--primary guess-overlay__confirm"
@@ -138,6 +160,9 @@ export default function App() {
           <div className="distance">{Math.round(latest.distanceKm)} km</div>
           <p>de distância do centro de</p>
           <h1>{city.name}</h1>
+          <Suspense fallback={<div className="map map--result map-fallback">Preparando comparação…</div>}>
+            <ResultMap city={city} guess={latest.guess} />
+          </Suspense>
           <div className="result-note">
             {latest.distanceKm < 25 ? 'Quase em cima.' : latest.distanceKm < 80 ? 'Você pegou bem a região.' : 'Ainda tem chão para conhecer SP.'}
           </div>
