@@ -41,6 +41,7 @@ button { font: inherit; }
   padding: 24px 0;
 }
 
+.panel--game { justify-content: flex-start; }
 .panel--intro, .panel--result, .panel--summary { max-width: 580px; }
 .eyebrow { text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; font-weight: 750; color: #6f6a61; margin-bottom: 10px; }
 h1 { margin: 0; line-height: .98; font-size: clamp(2.35rem, 8.5vw, 4.9rem); letter-spacing: -.055em; }
@@ -58,7 +59,11 @@ p { color: #5d584f; line-height: 1.55; font-size: 1rem; }
   font-weight: 650;
 }
 .screen-title { font-size: clamp(2rem, 7vw, 3.8rem); margin-bottom: 18px; }
-.instruction { margin: -5px 0 14px; font-size: .9rem; }
+
+.game-stage {
+  position: relative;
+  min-height: 0;
+}
 
 .map {
   width: 100%;
@@ -66,9 +71,76 @@ p { color: #5d584f; line-height: 1.55; font-size: 1rem; }
   border: 1px solid #b9b2a5;
   background: #dedbd4;
 }
-.map--mystery { height: min(54dvh, 500px); }
-.map--guess { height: min(52dvh, 470px); cursor: crosshair; }
+.map--mystery { height: min(64dvh, 590px); }
+.map--guess { height: 40dvh; min-height: 250px; cursor: crosshair; border-left: 0; border-right: 0; }
 .maplibregl-ctrl-attrib { font-size: 9px !important; }
+
+.guess-launcher {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 14px;
+  border: 1px solid #171717;
+  background: #171717;
+  color: #f8f4ea;
+  font-weight: 850;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+
+.guess-launcher__icon { font-size: 1.25rem; line-height: 1; }
+
+.guess-overlay {
+  position: fixed;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-height: min(72dvh, 620px);
+  background: #f3f0e8;
+  border-top: 1px solid #171717;
+  box-shadow: 0 -16px 42px rgb(0 0 0 / 22%);
+  padding-bottom: max(12px, env(safe-area-inset-bottom));
+}
+
+.guess-overlay__header {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 16px;
+}
+
+.guess-overlay__header > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.guess-overlay__header strong { font-size: .98rem; }
+.guess-overlay__header span { color: #6f6a61; font-size: .78rem; }
+
+.guess-overlay__close {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #b9b2a5;
+  background: transparent;
+  color: #171717;
+  font-size: 1.55rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.guess-overlay__confirm {
+  width: calc(100% - 32px);
+  margin: 12px 16px 0;
+}
 
 .button {
   width: 100%;
@@ -104,4 +176,19 @@ footer { padding: 16px 0 2px; border-top: 1px solid #cfc9bc; font-size: .68rem; 
   .panel { padding: 38px 0; }
   .button { width: auto; min-width: 220px; align-self: flex-start; }
   .panel--intro .button, .panel--result .button, .panel--summary .button { min-width: 240px; }
+
+  .guess-overlay {
+    position: absolute;
+    left: auto;
+    right: 14px;
+    bottom: 14px;
+    width: min(390px, calc(100% - 28px));
+    max-height: none;
+    border: 1px solid #171717;
+    box-shadow: 0 12px 40px rgb(0 0 0 / 24%);
+    padding-bottom: 12px;
+  }
+
+  .map--guess { height: 330px; min-height: 0; }
+  .guess-overlay__confirm { width: calc(100% - 24px); margin: 12px 12px 0; align-self: stretch; }
 }
