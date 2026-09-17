@@ -3,6 +3,7 @@ import { LngLatBounds, Map, Marker, setWorkerUrl, type Map as MapInstance } from
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
 import { SP_BOUNDS, SP_OUTLINE, type City } from './data'
 import type { LngLat } from './geo'
+import type { Attempt } from './game'
 
 setWorkerUrl(workerUrl)
 
@@ -112,9 +113,11 @@ export function MysteryMap({ city }: MysteryMapProps) {
 type GuessMapProps = {
   value: LngLat | null
   onChange: (value: LngLat) => void
+  attempts: Attempt[]
+  visible: boolean
 }
 
-export function GuessMap({ value, onChange }: GuessMapProps) {
+export function GuessMap({ value, onChange, attempts, visible }: GuessMapProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const markerRef = useRef<Marker | null>(null)
   const mapRef = useRef<MapInstance | null>(null)
@@ -165,13 +168,36 @@ export function GuessMap({ value, onChange }: GuessMapProps) {
   }, [onChange])
 
   useEffect(() => {
-    if (!value || !mapRef.current) return
     markerRef.current?.remove()
-    markerRef.current = new Marker({ color: '#171717' }).setLngLat(value).addTo(mapRef.current)
+    markerRef.current = null
+    if (!value || !mapRef.current) return
+    markerRef.current = new Marker({ color: '#d14b32' }).setLngLat(value).addTo(mapRef.current)
   }, [value])
+
+  useEffect(() => {
+    if (!mapRef.current) return
+    const map = mapRef.current
+    const markers = attempts.map((attempt, index) => {
+      const element = document.createElement('div')
+      element.className = 'past-guess-marker'
+      element.textContent = String(index + 1)
+      element.setAttribute('aria-label', `Palpite ${index + 1}`)
+      return new Marker({ element }).setLngLat(attempt.guess).addTo(map)
+    })
+    return () => markers.forEach(marker => marker.remove())
+  }, [attempts])
+
+  useEffect(() => {
+    if (!visible) return
+    const frame = window.requestAnimationFrame(() => mapRef.current?.resize())
+    return () => window.cancelAnimationFrame(frame)
+  }, [visible])
 
   return (
     <div className="map-frame" aria-busy={status === 'loading'}>
+      <div className="guess-map-tools">
+        <button type="button" disabled={status !== 'ready'} onClick={() => mapRef.current?.fitBounds(SP_BOUNDS, { padding: 20, duration: 0 })}>Ver todo o estado</button>
+      </div>
       <div className={`map map--guess ${status !== 'ready' ? 'map--loading' : ''}`} ref={containerRef} aria-label="Mapa do estado de São Paulo para fazer o palpite" />
       <MapFeedback status={status} />
     </div>
@@ -249,7 +275,7 @@ export function ResultMap({ city, guess }: ResultMapProps) {
       <MapFeedback status={status} />
       {status === 'ready' && (
         <div className="result-map-legend" aria-label="Legenda do mapa">
-          <span><i className="legend-dot legend-dot--guess" />Seu palpite</span>
+          <span><i className="legend-dot legend-dot--guess" />Melhor palpite</span>
           <span><i className="legend-dot legend-dot--city" />Local correto</span>
         </div>
       )}

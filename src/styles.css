@@ -234,3 +234,32 @@ footer { padding: 16px 0 2px; border-top: 1px solid #cfc9bc; font-size: .68rem; 
   .map--result { height: 320px; }
   .guess-overlay__confirm { width: calc(100% - 24px); margin: 12px 12px 0; align-self: stretch; }
 }
+
+[hidden] { display: none !important; }
+.rules { padding-left: 22px; color: #403c35; line-height: 1.65; }
+.rules li + li { margin-top: 6px; }
+.attempt-feedback { padding: 12px 14px; margin-bottom: 12px; background: #e8e3d8; border-left: 3px solid #d14b32; font-size: .88rem; line-height: 1.5; }
+.attempt-history { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 6px; }
+.attempt-history li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid #cfc9bc; font-size: .8rem; }
+.attempt-history li > span:last-child { margin-left: auto; }
+.attempt-number, .past-guess-marker { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: #171717; color: #fff; font-weight: 800; }
+.past-guess-marker { width: 30px; height: 30px; border: 2px solid #f3f0e8; box-shadow: 0 2px 6px #0005; font-size: 13px; }
+.guess-overlay { display: flex; flex-direction: column; max-height: 85dvh; }
+.guess-overlay__header, .guess-overlay__confirm { flex-shrink: 0; }
+.guess-overlay__confirm { width: calc(100% - 32px); min-width: 0; margin: 12px 16px 0; align-self: stretch; }
+.guess-overlay__body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.guess-overlay .attempt-history { margin: 10px 16px 0; }
+.guess-help { font-size: .75rem; margin: 8px 16px 0; }
+.guess-map-tools { position: absolute; z-index: 4; top: 8px; left: 8px; }
+.guess-map-tools button { border: 1px solid #b9b2a5; background: #f3f0e8; color: #171717; min-height: 44px; padding: 8px 12px; font-size: .75rem; cursor: pointer; }
+.guess-map-tools button:disabled { opacity: .5; }
+.map--guess { height: 34dvh; min-height: 200px; }
+.session-results { list-style: none; padding: 0; }
+.session-results li { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid #cfc9bc; }
+.session-results span { color: #5d584f; font-size: .85rem; }
+.panel--result .distance { font-size: clamp(3rem, 14vw, 6rem); }
+.panel--result .result-map-wrap { margin-top: 18px; }
+@media (min-width: 680px) {
+  .guess-overlay { max-height: calc(min(64dvh, 590px) - 28px); }
+  .map--guess { height: 280px; }
+}
