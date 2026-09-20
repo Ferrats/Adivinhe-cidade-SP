@@ -1,76 +1,131 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { cities } from './data'
-import { haversineKm, type LngLat } from './geo'
 import { summarizeResults, type RoundResult } from './game'
 
 const MysteryMap = lazy(() => import('./MapView').then((module) => ({ default: module.MysteryMap })))
-const GuessMap = lazy(() => import('./MapView').then((module) => ({ default: module.GuessMap })))
-const ResultMap = lazy(() => import('./MapView').then((module) => ({ default: module.ResultMap })))
 
 type Screen = 'intro' | 'mystery' | 'result' | 'summary'
+type Attempt = { name: string; correct: boolean }
+type IbgeMunicipality = { nome: string }
+
+const MAX_ATTEMPTS = 5
+
+function normalize(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+    .trim()
+}
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('intro')
   const [round, setRound] = useState(0)
-  const [guess, setGuess] = useState<LngLat | null>(null)
-  const [guessOpen, setGuessOpen] = useState(false)
+  const [input, setInput] = useState('')
+  const [attempts, setAttempts] = useState<Attempt[]>([])
   const [results, setResults] = useState<RoundResult[]>([])
-  const guessLauncherRef = useRef<HTMLButtonElement>(null)
-  const guessCloseRef = useRef<HTMLButtonElement>(null)
+  const [municipalities, setMunicipalities] = useState<string[]>([])
+  const [municipalityStatus, setMunicipalityStatus] = useState<'loading' | 'ready' | 'fallback'>('loading')
+  const [inputError, setInputError] = useState('')
 
   const city = cities[round]
   const latest = results.at(-1)
-
-  const { averageKm, best } = useMemo(() => summarizeResults(results), [results])
-
-  const closeGuess = useCallback(() => {
-    setGuessOpen(false)
-    window.setTimeout(() => guessLauncherRef.current?.focus(), 0)
-  }, [])
+  const { solved, averageAttempts, best } = useMemo(() => summarizeResults(results), [results])
 
   useEffect(() => {
-    if (!guessOpen) return
+    let active = true
 
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    guessCloseRef.current?.focus()
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeGuess()
-    }
-    document.addEventListener('keydown', handleKeyDown)
+    fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados/35/municipios?orderBy=nome')
+      .then((response) => {
+        if (!response.ok) throw new Error('IBGE request failed')
+        return response.json() as Promise<IbgeMunicipality[]>
+      })
+      .then((data) => {
+        if (!active) return
+        setMunicipalities(data.map((item) => item.nome))
+        setMunicipalityStatus('ready')
+      })
+      .catch(() => {
+        if (!active) return
+        setMunicipalities(cities.map((item) => item.name))
+        setMunicipalityStatus('fallback')
+      })
 
     return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('keydown', handleKeyDown)
+      active = false
     }
-  }, [closeGuess, guessOpen])
+  }, [])
+
+  const municipalityMatches = useMemo(() => {
+    const query = normalize(input)
+    if (!query) return []
+
+    return municipalities
+      .filter((name) => normalize(name).includes(query))
+      .sort((a, b) => {
+        const aStarts = normalize(a).startsWith(query)
+        const bStarts = normalize(b).startsWith(query)
+        if (aStarts !== bStarts) return aStarts ? -1 : 1
+        return a.localeCompare(b, 'pt-BR')
+      })
+      .slice(0, 10)
+  }, [input, municipalities])
+
+  const resetRound = () => {
+    setInput('')
+    setAttempts([])
+    setInputError('')
+  }
 
   const resetGame = () => {
     setRound(0)
-    setGuess(null)
-    setGuessOpen(false)
     setResults([])
+    resetRound()
     setScreen('mystery')
   }
 
-  const handleGuess = useCallback((value: LngLat) => setGuess(value), [])
+  const submitGuess = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!city || municipalityStatus === 'loading') return
 
-  const confirmGuess = () => {
-    if (!guess || !city) return
-    const distanceKm = haversineKm(guess, city.center)
-    setResults((current) => [...current, { city: city.name, distanceKm, guess }])
-    setGuessOpen(false)
-    setScreen('result')
+    const normalizedInput = normalize(input)
+    const selectedName = municipalities.find((name) => normalize(name) === normalizedInput)
+
+    if (!selectedName) {
+      setInputError('Escolha um município válido do estado de São Paulo.')
+      return
+    }
+
+    if (attempts.some((attempt) => normalize(attempt.name) === normalize(selectedName))) {
+      setInputError('Você já tentou essa cidade.')
+      return
+    }
+
+    const correct = normalize(selectedName) === normalize(city.name)
+    const nextAttempts = [...attempts, { name: selectedName, correct }]
+    const finished = correct || nextAttempts.length >= MAX_ATTEMPTS
+
+    setAttempts(nextAttempts)
+    setInput('')
+    setInputError('')
+
+    if (finished) {
+      setResults((current) => [
+        ...current,
+        { city: city.name, solved: correct, attempts: nextAttempts.length },
+      ])
+      setScreen('result')
+    }
   }
 
   const nextRound = () => {
-    setGuess(null)
-    setGuessOpen(false)
+    resetRound()
+
     if (round >= cities.length - 1) {
       setScreen('summary')
       return
     }
+
     setRound((value) => value + 1)
     setScreen('mystery')
   }
@@ -79,7 +134,7 @@ export default function App() {
     <main className="app-shell">
       <header className="topbar">
         <div className="brand">ADIVINHE A CIDADE</div>
-        <div className="alpha">SP · α 0.01.1</div>
+        <div className="alpha">SP · α 0.02</div>
       </header>
 
       {screen === 'intro' && (
@@ -87,11 +142,11 @@ export default function App() {
           <div className="eyebrow">Experimento geográfico</div>
           <h1>Você reconhece uma cidade paulista só pelo mapa?</h1>
           <p>
-            Observe a malha urbana sem nomes e marque no mapa onde você acha que a cidade fica.
-            São 10 rodadas nesta primeira versão.
+            Observe a malha urbana sem nomes e tente descobrir o município. Você tem até
+            cinco palpites por cidade.
           </p>
           <button className="button button--primary" onClick={resetGame}>Jogar</button>
-          <p className="fineprint">Sem conta, sem ranking, sem pegadinha. Só mapa.</p>
+          <p className="fineprint">Sem conta e sem ranking. Só mapa, memória e 645 possibilidades.</p>
         </section>
       )}
 
@@ -99,7 +154,7 @@ export default function App() {
         <section className="panel panel--game">
           <div className="round-row">
             <span>Cidade {round + 1}/{cities.length}</span>
-            <span>Observe a forma urbana</span>
+            <span>Tentativa {Math.min(attempts.length + 1, MAX_ATTEMPTS)}/{MAX_ATTEMPTS}</span>
           </div>
           <h1 className="screen-title">Que cidade é essa?</h1>
 
@@ -107,65 +162,76 @@ export default function App() {
             <Suspense fallback={<div className="map map--mystery map-fallback">Carregando mapa…</div>}>
               <MysteryMap city={city} />
             </Suspense>
-
-            {!guessOpen && (
-              <button
-                className="guess-launcher"
-                ref={guessLauncherRef}
-                onClick={() => setGuessOpen(true)}
-                aria-label="Abrir mapa para fazer palpite"
-              >
-                <span className="guess-launcher__icon">⌖</span>
-                <span>Fazer palpite</span>
-              </button>
-            )}
-
-            {guessOpen && (
-              <div className="guess-overlay" role="dialog" aria-modal="true" aria-label="Mapa para fazer o palpite">
-                <div className="guess-overlay__header">
-                  <div>
-                    <strong>Onde ela fica?</strong>
-                    <span>Toque no mapa para marcar</span>
-                  </div>
-                  <button
-                    className="guess-overlay__close"
-                    ref={guessCloseRef}
-                    onClick={closeGuess}
-                    aria-label="Fechar mapa de palpite"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <Suspense fallback={<div className="map map--guess map-fallback">Carregando mapa…</div>}>
-                  <GuessMap value={guess} onChange={handleGuess} />
-                </Suspense>
-
-                <button
-                  className="button button--primary guess-overlay__confirm"
-                  disabled={!guess}
-                  onClick={confirmGuess}
-                >
-                  Confirmar palpite
-                </button>
-              </div>
-            )}
           </div>
+
+          {attempts.length > 0 && (
+            <div className="attempt-list" aria-label="Palpites anteriores">
+              {attempts.map((attempt, index) => (
+                <div className={`attempt-row ${attempt.correct ? 'attempt-row--correct' : ''}`} key={attempt.name}>
+                  <span className="attempt-number">{index + 1}</span>
+                  <strong>{attempt.name}</strong>
+                  <span>{attempt.correct ? '✓' : '×'}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <form className="guess-form" onSubmit={submitGuess}>
+            <label htmlFor="city-guess">Digite o nome de uma cidade</label>
+            <div className="guess-field-row">
+              <input
+                id="city-guess"
+                className="guess-input"
+                value={input}
+                onChange={(event) => {
+                  setInput(event.target.value)
+                  setInputError('')
+                }}
+                list="municipality-options"
+                placeholder={municipalityStatus === 'loading' ? 'Carregando municípios…' : 'Ex.: Campinas'}
+                autoComplete="off"
+                disabled={municipalityStatus === 'loading'}
+                aria-describedby={inputError ? 'guess-error' : undefined}
+              />
+              <datalist id="municipality-options">
+                {municipalityMatches.map((name) => <option value={name} key={name} />)}
+              </datalist>
+              <button
+                className="button button--primary guess-submit"
+                type="submit"
+                disabled={!input.trim() || municipalityStatus === 'loading'}
+              >
+                Palpitar
+              </button>
+            </div>
+            {inputError && <p className="guess-error" id="guess-error" role="alert">{inputError}</p>}
+            {municipalityStatus === 'fallback' && (
+              <p className="guess-helper">A lista completa do IBGE não carregou; o modo offline está usando apenas as cidades desta alpha.</p>
+            )}
+          </form>
         </section>
       )}
 
       {screen === 'result' && city && latest && (
         <section className="panel panel--result">
-          <div className="eyebrow">Resultado</div>
-          <div className="distance">{Math.round(latest.distanceKm)} km</div>
-          <p>de distância do centro de</p>
+          <div className="eyebrow">{latest.solved ? 'Acertou' : 'Fim das tentativas'}</div>
           <h1>{city.name}</h1>
-          <Suspense fallback={<div className="map map--result map-fallback">Preparando comparação…</div>}>
-            <ResultMap city={city} guess={latest.guess} />
-          </Suspense>
-          <div className="result-note">
-            {latest.distanceKm < 25 ? 'Quase em cima.' : latest.distanceKm < 80 ? 'Você pegou bem a região.' : 'Ainda tem chão para conhecer SP.'}
+          <p className="result-copy">
+            {latest.solved
+              ? `Você encontrou a cidade em ${latest.attempts} ${latest.attempts === 1 ? 'tentativa' : 'tentativas'}.`
+              : 'A cidade misteriosa era esta. Vale guardar a forma urbana para a próxima.'}
+          </p>
+
+          <div className="attempt-list attempt-list--result">
+            {attempts.map((attempt, index) => (
+              <div className={`attempt-row ${attempt.correct ? 'attempt-row--correct' : ''}`} key={attempt.name}>
+                <span className="attempt-number">{index + 1}</span>
+                <strong>{attempt.name}</strong>
+                <span>{attempt.correct ? '✓' : '×'}</span>
+              </div>
+            ))}
           </div>
+
           <button className="button button--primary" onClick={nextRound}>
             {round === cities.length - 1 ? 'Ver resultado final' : 'Próxima cidade'}
           </button>
@@ -177,15 +243,25 @@ export default function App() {
           <div className="eyebrow">Alpha concluído</div>
           <h1>Como foi seu mapa mental de São Paulo?</h1>
           <div className="stat-grid">
-            <article className="stat-card"><strong>{Math.round(averageKm)} km</strong><span>erro médio</span></article>
-            <article className="stat-card"><strong>{best ? `${Math.round(best.distanceKm)} km` : '—'}</strong><span>melhor palpite</span></article>
+            <article className="stat-card">
+              <strong>{solved}/{cities.length}</strong>
+              <span>cidades acertadas</span>
+            </article>
+            <article className="stat-card">
+              <strong>{solved ? averageAttempts.toFixed(1).replace('.', ',') : '—'}</strong>
+              <span>tentativas por acerto</span>
+            </article>
           </div>
-          {best && <p className="summary-copy">Sua melhor cidade foi <strong>{best.city}</strong>.</p>}
+          {best && (
+            <p className="summary-copy">
+              Seu acerto mais rápido foi <strong>{best.city}</strong>, em {best.attempts} {best.attempts === 1 ? 'tentativa' : 'tentativas'}.
+            </p>
+          )}
           <button className="button button--primary" onClick={resetGame}>Jogar de novo</button>
         </section>
       )}
 
-      <footer>Dados de mapa © OpenStreetMap · tiles por OpenFreeMap</footer>
+      <footer>Dados de mapa © OpenStreetMap · tiles por OpenFreeMap · municípios via IBGE</footer>
     </main>
   )
 }
