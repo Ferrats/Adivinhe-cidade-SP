@@ -1,7 +1,7 @@
 {
   "name": "adivinhe-cidade-sp",
   "private": true,
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.3-alpha.0",
   "packageManager": "pnpm@11.19.0",
   "type": "module",
   "scripts": {
