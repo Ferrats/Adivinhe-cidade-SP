@@ -3,16 +3,20 @@ import { summarizeResults, type RoundResult } from './game'
 
 describe('summarizeResults', () => {
   it('returns an empty summary before the first round', () => {
-    expect(summarizeResults([])).toEqual({ averageKm: 0, best: null })
+    expect(summarizeResults([])).toEqual({ solved: 0, averageAttempts: 0, best: null })
   })
 
-  it('calculates the average and keeps the closest guess', () => {
+  it('counts solved rounds and calculates attempts only from solved rounds', () => {
     const results: RoundResult[] = [
-      { city: 'Campinas', distanceKm: 30, guess: [-47, -23] },
-      { city: 'Santos', distanceKm: 10, guess: [-46, -24] },
-      { city: 'Olímpia', distanceKm: 20, guess: [-49, -21] },
+      { city: 'Campinas', solved: true, attempts: 3 },
+      { city: 'Santos', solved: false, attempts: 5 },
+      { city: 'Olímpia', solved: true, attempts: 1 },
     ]
 
-    expect(summarizeResults(results)).toEqual({ averageKm: 20, best: results[1] })
+    expect(summarizeResults(results)).toEqual({
+      solved: 2,
+      averageAttempts: 2,
+      best: results[2],
+    })
   })
 })
