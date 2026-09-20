@@ -11,6 +11,7 @@ Alpha 0.03 de um jogo geográfico mobile-first: observe o mapa sem nomes e digit
 - O acerto exige o **município correto**, identificado pelo código IBGE. Estar a menos de 15 km não conta como acerto.
 - A resposta aparece somente ao acertar ou após o quinto erro. No acerto não há seta.
 - O resumo mostra acertos, tentativas de cada rodada e média de tentativas somente das cidades acertadas.
+- Ao terminar a sessão, **Copiar resultado** gera um texto com quadradinhos por tentativa, acertos e link do jogo, sem revelar cidades. Se o navegador bloquear a cópia, o texto fica selecionado para copiar manualmente. O link inicia uma nova sessão aleatória, não reproduz os mesmos desafios.
 - Uma nova sessão sorteia novamente. Recarregar a página reinicia o jogo.
 
 ## Dados e custo
@@ -55,4 +56,4 @@ A verificação executa testes das pistas, direção geográfica, validação, c
 
 ## Próximos passos
 
-Playtestar a dificuldade das pistas e dos 10 mapas. Desafio diário, compartilhamento, persistência, streak e expansão do conjunto de desafios ficam para próximas versões.
+Playtestar a dificuldade das pistas e dos 10 mapas. Desafio diário, persistência, streak e expansão do conjunto de desafios ficam para próximas versões.

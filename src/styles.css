@@ -354,4 +354,10 @@ footer { padding: 16px 0 2px; border-top: 1px solid #cfc9bc; font-size: .68rem; 
 .session-results li { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid #cfc9bc; }
 .session-results span { color: #5d584f; font-size: .85rem; }
 footer a { color: inherit; }
+.share-result { margin-top: 24px; padding-top: 20px; border-top: 1px solid #cfc9bc; text-align: left; }
+.share-result h2 { font-size: 1.15rem; margin: 0; }
+.share-label { display: block; margin: 16px 0 8px; font-size: .78rem; font-weight: 700; }
+.share-text { display: block; box-sizing: border-box; width: 100%; min-width: 0; padding: 12px; resize: vertical; border: 1px solid #cfc9bc; background: #fbf8f0; color: #171717; font: inherit; font-size: .85rem; line-height: 1.6; }
+.share-text:focus-visible { outline: 2px solid #d14b32; outline-offset: 2px; }
+.share-status { min-height: 2.5em; }
 h1[tabindex]:focus-visible { outline: 2px solid #d14b32; outline-offset: 4px; }
