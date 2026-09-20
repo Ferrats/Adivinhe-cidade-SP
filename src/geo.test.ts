@@ -12,3 +12,17 @@ describe('haversineKm', () => {
     expect(distance).toBeLessThan(60)
   })
 })
+
+import { directionTo } from './geo'
+
+describe('direction from the guess toward the target', () => {
+  it.each([
+    [0, 1, 'norte'], [1, 1, 'nordeste'], [1, 0, 'leste'], [1, -1, 'sudeste'],
+    [0, -1, 'sul'], [-1, -1, 'sudoeste'], [-1, 0, 'oeste'], [-1, 1, 'noroeste'],
+  ])('points from origin to (%s, %s): %s', (lng, lat, label) => {
+    expect(directionTo([0, 0], [Number(lng), Number(lat)]).label).toBe(label)
+  })
+  it('points from Santos toward São Paulo, not the reverse', () => {
+    expect(directionTo([-46.3289, -23.9608], [-46.6333, -23.5505]).label).toBe('noroeste')
+  })
+})

@@ -342,3 +342,16 @@ footer { padding: 16px 0 2px; border-top: 1px solid #cfc9bc; font-size: .68rem; 
     width: 100%;
   }
 }
+
+.rules { padding-left: 22px; color: #403c35; line-height: 1.65; }
+.rules li + li { margin-top: 6px; }
+.attempt-feedback { padding: 12px 14px; background: #e8e3d8; border-left: 3px solid #d14b32; font-size: .88rem; line-height: 1.5; }
+.attempt-list { list-style: none; padding: 0; text-align: left; }
+.attempt-row { grid-template-columns: 24px minmax(0, 1fr) auto; }
+.attempt-city { overflow-wrap: anywhere; font-size: .88rem; }
+.attempt-hint { display: flex; flex-direction: column; gap: 4px; text-align: right; font-size: .8rem; }
+.session-results { list-style: none; padding: 0; text-align: left; }
+.session-results li { display: flex; flex-direction: column; gap: 4px; padding: 12px 0; border-bottom: 1px solid #cfc9bc; }
+.session-results span { color: #5d584f; font-size: .85rem; }
+footer a { color: inherit; }
+h1[tabindex]:focus-visible { outline: 2px solid #d14b32; outline-offset: 4px; }
