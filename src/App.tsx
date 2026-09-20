@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { cities } from './data'
 import { formatDistance, initialRound, MAX_ATTEMPTS, SESSION_SIZE, selectSession, submitGuess, summarizeResults, type Attempt, type RoundResult } from './game'
 import { searchMunicipalities } from './municipalities'
+import ShareResult from './ShareResult'
 
 const MysteryMap = lazy(() => import('./MapView').then(module => ({ default: module.MysteryMap })))
 type Screen = 'intro' | 'mystery' | 'result' | 'summary'
@@ -122,6 +123,7 @@ export default function App() {
       </div>
       <ul className="session-results">{results.map(result => <li key={result.city}><strong>{result.city}</strong><span>{result.solved ? `Acertou em ${result.attempts} ${result.attempts === 1 ? 'tentativa' : 'tentativas'}` : 'Não encontrada · 5 tentativas'}</span></li>)}</ul>
       {summary.best && <p className="summary-copy">Seu acerto mais rápido foi <strong>{summary.best.city}</strong>.</p>}
+      <ShareResult results={results} />
       <button className="button button--primary" onClick={resetGame}>Jogar outra sessão</button>
     </section>}
     <footer>Dados de mapa © OpenStreetMap · tiles por OpenFreeMap · <a href="https://github.com/kelvins/municipios-brasileiros">Catálogo de municípios</a> · <a href="/municipalities-LICENSE.txt">Licença dos dados</a></footer>
